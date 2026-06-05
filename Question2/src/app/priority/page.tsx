@@ -1,20 +1,15 @@
 "use client";
 import { useEffect, useState } from "react";
-import axios from "axios";
 import Container from "@mui/material/Container";
 import Typography from "@mui/material/Typography";
 import Chip from "@mui/material/Chip";
 import CircularProgress from "@mui/material/CircularProgress";
-import Alert from "@mui/material/Alert";
 import Card from "@mui/material/Card";
 import CardContent from "@mui/material/CardContent";
 import Slider from "@mui/material/Slider";
 import Stack from "@mui/material/Stack";
 import Button from "@mui/material/Button";
 import Box from "@mui/material/Box";
-
-const API = "http://4.224.186.213/evaluation-service/notifications";
-const AUTH_TOKEN = "QQdEYy";
 
 const WEIGHT: Record<string, number> = { Placement: 3, Result: 2, Event: 1 };
 const TYPE_COLOR: Record<string, "success" | "warning" | "info"> = {
@@ -35,26 +30,16 @@ function score(n: Notification) {
 export default function PriorityPage() {
   const [all, setAll] = useState<Notification[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
   const [topN, setTopN] = useState(10);
 
-  useEffect(() => { fetchAll(); }, []);
-
-  async function fetchAll() {
-    setLoading(true);
-    setError("");
-    try {
-      const { data } = await axios.get(API, {
-        params: { limit: 100, page: 1 },
-        headers: { Authorization: "Bearer " + AUTH_TOKEN }
+  useEffect(() => {
+    fetch("/api/notifications?limit=10&page=1")
+      .then((res) => res.json())
+      .then((data) => {
+        setAll(data.notifications ?? []);
+        setLoading(false);
       });
-      setAll(data.notifications ?? []);
-    } catch {
-      setError("Failed to fetch notifications.");
-    } finally {
-      setLoading(false);
-    }
-  }
+  }, []);
 
   const topNotifications = [...all]
     .sort((a, b) => score(b) - score(a))
@@ -79,9 +64,8 @@ export default function PriorityPage() {
       </Box>
 
       {loading && <CircularProgress />}
-      {error && <Alert severity="error">{error}</Alert>}
 
-      {!loading && !error && topNotifications.map((n, i) => (
+      {!loading && topNotifications.map((n, i) => (
         <Card key={n.ID} sx={{ mb: 2 }}>
           <CardContent>
             <Stack direction="row" alignItems="center" gap={2}>
